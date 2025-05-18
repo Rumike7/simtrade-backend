@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: common
+  server:
+    port: 8082
+  datasource:
+    url: jdbc:postgresql://localhost:5433/market_service
+    username: rumike
+    password: do0rdie
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: public
+
+jwt:
+  secret: fqU9JzNw9mRv0jRg5UZdg08SOunqfS406ReqAsIKpPCwk0UVyU0TNHlCIVrBfj8tUlwi2paaTXq8I2FdN1a6HA==
+  expiration: 864000000
+
+logging:
+  level:
+    com.simtrade.market_service: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: INFO
+
+market:
+  service:
+    url: http://localhost:8082
+
+user:
+  service:
+    url: http://localhost:8081
+
+order:
+  service:
+    url: http://localhost:8083

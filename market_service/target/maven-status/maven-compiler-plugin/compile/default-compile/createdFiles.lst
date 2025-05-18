@@ -1,0 +1,8 @@
+com/simtrade/market_service/exception/UserAlreadyExistsException.class
+com/simtrade/market_service/exception/GlobalExceptionHandler.class
+com/simtrade/market_service/MarketServiceApplication.class
+com/simtrade/market_service/entity/StockPrice.class
+com/simtrade/market_service/repository/StockPriceRepository.class
+com/simtrade/market_service/controller/MarketController.class
+com/simtrade/market_service/service/MarketService.class
+com/simtrade/market_service/service/MarketWebSocketService.class

@@ -1,0 +1,47 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "User Service",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/user_service",
+            "mainClass": "com.simtrade.user_service.UserServiceApplication",
+            "projectName": "user-service-user_service",
+            "args": "",
+            "vmArgs": "-Dserver.port=8081 -Dspring.profiles.active=dev",
+            "envFile": "${workspaceFolder}/user_service/.env"
+        },
+        {
+            "type": "java",
+            "name": "Market Service",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/market_service",
+            "mainClass": "com.simtrade.market_service.MarketServiceApplication",
+            "projectName": "market-service-market_service",
+            "args": "",
+            "vmArgs": "-Dserver.port=8082 -Dspring.profiles.active=dev",
+            "envFile": "${workspaceFolder}/market_service/.env"
+        },
+        {
+            "type": "java",
+            "name": "Order Service",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/order_service",
+            "mainClass": "com.simtrade.order_service.OrderServiceApplication",
+            "projectName": "order-service-order_service",
+            "args": "",
+            "vmArgs": "-Dserver.port=8083 -Dspring.profiles.active=dev",
+            "envFile": "${workspaceFolder}/order_service/.env"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "SimTrade Debug",
+            "name": "SimTrade Debug",
+            "name": "SimTrade Debug",
+            "name": "SimTrade Debug",
+            "configurations": ["Order Service", "Market Service", "User Service"]
+        }
+    ]
+}

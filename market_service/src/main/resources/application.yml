@@ -1,0 +1,51 @@
+spring:
+  application.name: market-service
+  server:
+    port: 8082
+  datasource:
+    url: jdbc:postgresql://localhost:5433/market_service
+    username: rumike
+    password: do0rdie
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+  h2:
+    console:
+      enabled: false
+
+jwt:
+  secret: fqU9JzNw9mRv0jRg5UZdg08SOunqfS406ReqAsIKpPCwk0UVyU0TNHlCIVrBfj8tUlwi2paaTXq8I2FdN1a6HA==
+  expiration: 864000000
+
+redis: 
+  host: localhost 
+  port: 6379
+
+kafka: 
+  bootstrap-servers: localhost:9092 
+  consumer: 
+    group-id: leaderboard-group 
+    auto-offset-reset: latest
+
+
+logging:
+  level:
+    com.simtrade.market_service: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: INFO
+    org.springframework.kafka: DEBUG
+    org.apache.kafka: DEBUG
+
+market:
+  service:
+    url: http://localhost:8082
+
+user:
+  service:
+    url: http://localhost:8081
+
+order:
+  service:
+    url: http://localhost:8083
