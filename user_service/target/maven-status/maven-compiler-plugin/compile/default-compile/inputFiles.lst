@@ -1,5 +1,4 @@
 /home/rumike/Documents/AE/SimTrade/user_service/src/main/java/com/simtrade/user_service/controller/LeaderboardController.java
-/home/rumike/Documents/AE/SimTrade/user_service/src/main/java/com/simtrade/user_service/dto/UserResponseDTO.java
 /home/rumike/Documents/AE/SimTrade/user_service/src/main/java/com/simtrade/user_service/entity/LeaderboardSnapshot.java
 /home/rumike/Documents/AE/SimTrade/user_service/src/main/java/com/simtrade/user_service/dto/UserRegisterDTO.java
 /home/rumike/Documents/AE/SimTrade/user_service/src/main/java/com/simtrade/user_service/service/UserService.java
@@ -13,7 +12,11 @@
 /home/rumike/Documents/AE/SimTrade/user_service/src/main/java/com/simtrade/user_service/UserServiceApplication.java
 /home/rumike/Documents/AE/SimTrade/user_service/src/main/java/com/simtrade/user_service/dto/UserUpdateDTO.java
 /home/rumike/Documents/AE/SimTrade/user_service/src/main/java/com/simtrade/user_service/repository/UserRepository.java
+/home/rumike/Documents/AE/SimTrade/user_service/src/main/java/com/simtrade/user_service/entity/AccountHolder.java
 /home/rumike/Documents/AE/SimTrade/user_service/src/main/java/com/simtrade/user_service/entity/User.java
 /home/rumike/Documents/AE/SimTrade/user_service/src/main/java/com/simtrade/user_service/repository/LeaderboardSnapshotRepository.java
 /home/rumike/Documents/AE/SimTrade/user_service/src/main/java/com/simtrade/user_service/service/LeaderboardService.java
+/home/rumike/Documents/AE/SimTrade/user_service/src/main/java/com/simtrade/user_service/service/SystemStateService.java
+/home/rumike/Documents/AE/SimTrade/user_service/src/main/java/com/simtrade/user_service/repository/SystemStateRepository.java
+/home/rumike/Documents/AE/SimTrade/user_service/src/main/java/com/simtrade/user_service/entity/SystemState.java
 /home/rumike/Documents/AE/SimTrade/user_service/src/main/java/com/simtrade/user_service/service/TransactionConsumer.java

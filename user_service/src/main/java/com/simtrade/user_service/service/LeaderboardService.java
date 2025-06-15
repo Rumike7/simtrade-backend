@@ -10,6 +10,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations; 
 import org.springframework.stereotype.Service;
 import com.simtrade.common.client.MarketClient;
+import com.simtrade.common.dto.UserResponseDTO;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -27,8 +28,7 @@ public class LeaderboardService {
     private final RedisTemplate<String, String> redisTemplate; 
     private final MarketClient marketClient;
 
-    // Calculate portfolio value (balance + market value of stocks)
-    public BigDecimal calculatePortfolioValue(User user) {
+    public BigDecimal calculatePortfolioValue(UserResponseDTO user) {
         BigDecimal stockValue = user.getPortfolio().entrySet().stream()
             .map(entry -> marketClient.getPrice(entry.getKey()).getPrice()
                 .multiply(entry.getValue()))
@@ -36,8 +36,7 @@ public class LeaderboardService {
         return user.getBalance().add(stockValue);
     }
 
-    // Calculate profit/loss percentage
-    public BigDecimal calculateProfitLossPercentage(User user) {
+    public BigDecimal calculateProfitLossPercentage(UserResponseDTO user) {
         BigDecimal portfolioValue = calculatePortfolioValue(user);
         BigDecimal totalDeposits = user.getTotalDeposits();
         if (totalDeposits.compareTo(BigDecimal.ZERO) == 0) {
@@ -50,7 +49,9 @@ public class LeaderboardService {
 
 
     // Update user's rank in Redis
-    public void updateUserRank(Long userId, User user, BigDecimal portfolioValue, String leaderboardType) {
+    public void updateUserRank(UserResponseDTO user, String leaderboardType) {
+        Long userId = user.getId();
+        BigDecimal portfolioValue = calculatePortfolioValue(user); 
         String key = String.format(LEADERBOARD_KEY, leaderboardType);
         ZSetOperations<String, String> zSetOps = redisTemplate.opsForZSet();
         zSetOps.add(key, userId.toString(), portfolioValue.doubleValue());

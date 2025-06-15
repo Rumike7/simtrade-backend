@@ -30,7 +30,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/market/**").permitAll()
                 .requestMatchers("/api/users/register", "/api/users/login", "/api/users/logout").permitAll()
-                .requestMatchers("/api/users/account").hasAnyRole("USER", "PREMIUM_USER", "ADMIN")
+                .requestMatchers("/api/users/account/**").permitAll()
+                .requestMatchers("/api/users/details/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll())

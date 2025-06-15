@@ -22,8 +22,7 @@ public class LeaderboardController {
         @RequestParam (defaultValue = "1") int page, 
         @RequestParam(defaultValue = "100") int limit) {
         return leaderboardService.getTopUsers(type, page, limit);
-
-
+        
     }
 
     @GetMapping("/rank/{userId}")

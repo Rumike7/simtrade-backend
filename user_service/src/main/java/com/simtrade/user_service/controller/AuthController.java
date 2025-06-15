@@ -1,9 +1,11 @@
 package com.simtrade.user_service.controller;
 
 import com.simtrade.common.util.JwtUtil;
+import com.simtrade.common.dto.UserResponseDTO;
 import com.simtrade.user_service.dto.*;
 import com.simtrade.user_service.entity.User;
 import com.simtrade.user_service.exception.UserAlreadyExistsException;
+import com.simtrade.user_service.service.LeaderboardService;
 import com.simtrade.user_service.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,28 +16,30 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
+@RequiredArgsConstructor
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
     private final JwtUtil jwtUtil;
+    private final LeaderboardService leaderboardService;
 
-    public AuthController(AuthenticationManager authenticationManager, UserService userService, JwtUtil jwtUtil) {
-        this.authenticationManager = authenticationManager;
-        this.userService = userService;
-        this.jwtUtil = jwtUtil;
-    }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody UserRegisterDTO request) {
         try {
-            UserResponseDTO response = userService.registerUser(request);
-            return ResponseEntity.ok(response);
+            UserResponseDTO user = userService.registerUser(request);
+            leaderboardService.updateUserRank(user, "daily");
+
+            return ResponseEntity.ok(user);
         } catch (UserAlreadyExistsException e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());

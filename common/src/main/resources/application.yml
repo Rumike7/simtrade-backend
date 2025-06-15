@@ -15,6 +15,20 @@ spring:
     properties:
       hibernate:
         default_schema: public
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  cloud:
+    gateway:
+      routes:
+        - id: public-api
+          uri: http://public-service:8080
+          predicates:
+            - Path=/api/**
+          filters:
+            - name: ApiKeyGatewayFilter
+
 
 jwt:
   secret: fqU9JzNw9mRv0jRg5UZdg08SOunqfS406ReqAsIKpPCwk0UVyU0TNHlCIVrBfj8tUlwi2paaTXq8I2FdN1a6HA==
@@ -37,3 +51,6 @@ user:
 order:
   service:
     url: http://localhost:8083
+
+api:
+ key: Simtrade

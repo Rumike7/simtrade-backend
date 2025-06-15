@@ -4,6 +4,7 @@ import com.simtrade.common.client.MarketClient;
 import com.simtrade.common.client.UserClient;
 import com.simtrade.common.dto.UserResponseDTO;
 import com.simtrade.common.dto.UserUpdateDTO;
+import com.simtrade.common.dto.BuyAssetRequestDTO;
 import com.simtrade.common.dto.StockPriceDTO;
 import com.simtrade.order_service.entity.Order;
 import com.simtrade.order_service.entity.Order.Type;
@@ -13,8 +14,7 @@ import com.simtrade.common.entity.Transaction;
 import com.simtrade.order_service.repository.OrderRepository;
 import com.simtrade.order_service.repository.TransactionRepository;
 import com.simtrade.common.util.JwtUtil;
-import com.simtrade.common.entity.SystemState;
-import com.simtrade.common.service.SystemStateService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -40,7 +40,6 @@ public class OrderService {
     private final UserClient userClient;
     private final SimpMessagingTemplate messagingTemplate;
     private final JwtUtil jwtUtil;
-    private final SystemStateService systemStateService;
     private final Map<String, List<Order>> pendingOrders = new ConcurrentHashMap<>();
     private final TransactionProducer tradeEventProducer;
 
@@ -126,41 +125,17 @@ public class OrderService {
         BigDecimal currentBalance = user.getBalance();
         Map<String, BigDecimal> portfolio = user.getPortfolio();
         
-        SystemState systemState = systemStateService.getSystemState();
-        BigDecimal totalDollarValue = systemState.getTotalDollarValue();
-        Map<String, BigDecimal> totalShares = systemState.getTotalShares();
         
         
         // Update balance and portfolio
-        if (order.getType() == Type.BUY) {
-            currentBalance = currentBalance.subtract(totalCost);
-            totalDollarValue = totalDollarValue.add(totalCost);
-            portfolio.put(symbol, portfolio.getOrDefault(symbol, BigDecimal.ZERO).add(quantity));
-            BigDecimal newQuantity = totalShares.getOrDefault(symbol, BigDecimal.ZERO).subtract(quantity);
-            if (newQuantity.compareTo(BigDecimal.ZERO) == 0) {
-                totalShares.remove(symbol);
-            } else {
-                totalShares.put(symbol, newQuantity);
-            }
-        } else { // SELL
-            currentBalance = currentBalance.subtract(totalCost);
-            totalDollarValue = totalDollarValue.add(totalCost);
-            BigDecimal newQuantity = portfolio.getOrDefault(symbol, BigDecimal.ZERO).subtract(quantity);
-            if (newQuantity.compareTo(BigDecimal.ZERO) == 0) {
-                portfolio.remove(symbol);
-            } else {
-                portfolio.put(symbol, newQuantity);
-            }
-            totalShares.put(symbol, totalShares.getOrDefault(symbol, BigDecimal.ZERO).add(quantity));
-        }
+        BuyAssetRequestDTO buyAssetRequestDTO = new BuyAssetRequestDTO();
+        buyAssetRequestDTO.setBuying(order.getType() == Type.BUY);
+        buyAssetRequestDTO.setPrice(executionPrice);
+        buyAssetRequestDTO.setQuantity(quantity);
+        buyAssetRequestDTO.setSymbol(symbol);
+        buyAssetRequestDTO.setOtherId(-1L);
+        userClient.buyAsset(token, buyAssetRequestDTO);
         
-        // Update user via UserService API
-        UserUpdateDTO updateDTO = new UserUpdateDTO();
-        updateDTO.setBalance(currentBalance);
-        updateDTO.setPortfolio(portfolio);
-        userClient.updateUser(token, updateDTO);
-        systemStateService.updateSystemState(totalShares, totalDollarValue);
-
         // Update order
         order.setPrice(executionPrice);
         order.setStatus(Status.EXECUTED);

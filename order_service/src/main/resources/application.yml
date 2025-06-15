@@ -56,3 +56,8 @@ user:
 order:
   service:
     url: http://localhost:8083
+  loan:
+    min-amount: 100.00
+    max-interest-rate: 0.10
+    min-interest-rate: 0.01
+    max-loan-duration-days: 365

@@ -1,7 +1,9 @@
-package com.simtrade.common.service;
+package com.simtrade.user_service.service;
 
-import com.simtrade.common.entity.SystemState;
-import com.simtrade.common.repository.SystemStateRepository;
+import com.simtrade.common.enums.Trustable;
+import com.simtrade.user_service.entity.SystemState;
+import com.simtrade.user_service.repository.SystemStateRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -22,13 +24,15 @@ public class SystemStateService {
         // Check if system state already exists
         if (systemStateRepository.count() == 0) {
          // Initialize with 100 shares per symbol and $100,000 total dollar value
-            Map<String, BigDecimal> totalShares = new HashMap<>();
-            symbols.forEach(symbol -> totalShares.put(symbol, BigDecimal.valueOf(100)));
+            Map<String, BigDecimal> portfolio = new HashMap<>();
+            symbols.forEach(symbol -> portfolio.put(symbol, BigDecimal.valueOf(1000000)));
 
             SystemState systemState = SystemState.builder()
-                    .totalShares(totalShares)
-                    .totalDollarValue(BigDecimal.valueOf(100000))
-                    .build();
+                .portfolio(portfolio)
+                .balance(BigDecimal.valueOf(1000000000))
+                .totalDeposits(BigDecimal.valueOf(1000000000))
+                .build();
+
 
             systemStateRepository.save(systemState);
         }
@@ -40,10 +44,11 @@ public class SystemStateService {
                 .orElseThrow(() -> new IllegalStateException("System state not initialized"));
     }
 
-    public void updateSystemState(Map<String, BigDecimal> totalShares, BigDecimal totalDollarValue) {
+    public void updateSystemState(Map<String, BigDecimal> portfolio, BigDecimal balance) {
         SystemState systemState = getSystemState();
-        systemState.setTotalShares(totalShares);
-        systemState.setTotalDollarValue(totalDollarValue);
+        systemState.setPortfolio(portfolio);
+        systemState.setBalance(balance);
+        // systemState.setTotalDeposits(balance);
         systemStateRepository.save(systemState);
     }
 }

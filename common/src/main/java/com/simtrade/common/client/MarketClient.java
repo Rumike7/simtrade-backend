@@ -2,7 +2,7 @@ package com.simtrade.common.client;
 
 import com.simtrade.common.dto.StockPriceDTO;
 import com.simtrade.common.dto.VolumeUpdateRequest;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;

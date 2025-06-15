@@ -9,12 +9,14 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.simtrade.common.enums.Trustable;
+
 @Entity
 @Table(name = "users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class User  implements AccountHolder{
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -44,6 +46,13 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role = Role.GUEST;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Trustable trustable = Trustable.C;
+
+    @Column(nullable = false)
+    private BigDecimal interestRate = BigDecimal.ONE.negate();
 
     public static enum Role {
         USER, ADMIN, MODERATOR, ANALYST, GUEST, PREMIUM_USER, TESTER

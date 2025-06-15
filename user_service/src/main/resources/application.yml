@@ -14,6 +14,7 @@ spring:
     properties:
       hibernate:
         default_schema: public
+
         
 jwt:
   secret: fqU9JzNw9mRv0jRg5UZdg08SOunqfS406ReqAsIKpPCwk0UVyU0TNHlCIVrBfj8tUlwi2paaTXq8I2FdN1a6HA==
