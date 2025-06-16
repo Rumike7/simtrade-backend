@@ -20,4 +20,6 @@ public class UserResponseDTO {
     private Trustable trustable;
     private BigDecimal interestRate;
     private BigDecimal estimatedValue;
+    private BigDecimal startWeekAmount;
+
 }

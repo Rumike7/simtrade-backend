@@ -109,7 +109,7 @@ public class OrderService {
         }
 
         // Notify user
-        messagingTemplate.convertAndSend("/topic/orders/" + userIdStr, "Order placed: " + order.getType() + " " + order.getQuantity() + " " + symbol);
+        messagingTemplate.convertAndSend("/topic/orders/" + order.getSymbol(), order);
         return order;
     }
 
@@ -155,7 +155,7 @@ public class OrderService {
         // Update volume
         marketClient.updateVolume(symbol, quantity);
         
-        messagingTemplate.convertAndSend("/topic/transactions/" + userId, "Order executed: " + order.getType() + " " + order.getQuantity() + " " + symbol + " at $" + executionPrice);
+        messagingTemplate.convertAndSend("/topic/transactions/" + order.getSymbol() , order);
         tradeEventProducer.sendTransaction(transaction);
         
     }
@@ -183,7 +183,7 @@ public class OrderService {
                 if (!jwtUtil.validateToken(token)) {
                     order.setStatus(Status.CANCELED);
                     orderRepository.save(order);
-                    messagingTemplate.convertAndSend("/topic/orders/" + order.getUserId(), "Order canceled: Token invalid or expired for order on " + symbol);
+                    messagingTemplate.convertAndSend("/topic/orders/" + order.getSymbol(), order);
                     continue;
                 }
 
@@ -195,7 +195,7 @@ public class OrderService {
                         if (user.getBalance().compareTo(totalCost) < 0) {
                             order.setStatus(Status.CANCELED);
                             orderRepository.save(order);
-                            messagingTemplate.convertAndSend("/topic/orders/" + order.getUserId(), "Order canceled: Insufficient balance for buy order on " + symbol);
+                            messagingTemplate.convertAndSend("/topic/orders/" + order.getSymbol(), order);
                             continue;
                         }
                     } else { // SELL
@@ -203,7 +203,7 @@ public class OrderService {
                         if (portfolio.getOrDefault(symbol, BigDecimal.ZERO).compareTo(order.getQuantity()) < 0) {
                             order.setStatus(Status.CANCELED);
                             orderRepository.save(order);
-                            messagingTemplate.convertAndSend("/topic/orders/" + order.getUserId(), "Order canceled: Insufficient stock quantity for sell order on " + symbol);
+                            messagingTemplate.convertAndSend("/topic/orders/" + order.getSymbol(), order);
                             continue;
                         }
                     }
@@ -213,7 +213,7 @@ public class OrderService {
                 } catch (Exception e) {
                     order.setStatus(Status.CANCELED);
                     orderRepository.save(order);
-                    messagingTemplate.convertAndSend("/topic/orders/" + order.getUserId(), "Order canceled: Failed to execute order on " + symbol + " due to " + e.getMessage());
+                    messagingTemplate.convertAndSend("/topic/orders/" + order.getSymbol(), order);
                 }
             }
             orders.removeIf(order -> order.getStatus() != Status.PENDING);
@@ -231,5 +231,18 @@ public class OrderService {
 
     public List<Transaction> getUserTransactions(String userId) {
         return transactionRepository.findByBuyerIdOrSellerId(userId, userId);
+    }
+
+    public List<Order> getOrders(String status) {
+        if (status != null && !status.isEmpty()) {
+            status = status.toUpperCase();
+            return orderRepository.findByStatus(Status.valueOf(status));
+        } else {
+            return orderRepository.findAll();
+        }
+    }
+
+    public List<Transaction> getTransactions() {
+        return transactionRepository.findAll();
     }
 }

@@ -16,4 +16,5 @@ public class StockPriceDTO {
     private BigDecimal price;
     private long volume;
     private Instant timestamp;
+    private BigDecimal total_supply;
 }

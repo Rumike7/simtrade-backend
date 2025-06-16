@@ -27,7 +27,7 @@ public class MarketWebSocketService {
     
     @Scheduled(fixedRate = 1000)
     public void broadcastHistoricPrices() {
-        List<StockPrice> prices = MarketService.getHistoricalPrices("AAPL");
+        List<StockPrice> prices = MarketService.getHistoricalPrices("AAPL", 30*24*3600);
         messagingTemplate.convertAndSend("/topic/historics", prices);
     }
 }

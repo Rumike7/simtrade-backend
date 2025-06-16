@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.simtrade.user_service.UserServiceApplicationTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 7.927 s -- in com.simtrade.user_service.UserServiceApplicationTests
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 9.110 s -- in com.simtrade.user_service.UserServiceApplicationTests

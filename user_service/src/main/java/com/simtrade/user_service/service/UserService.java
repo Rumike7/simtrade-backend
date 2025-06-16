@@ -17,6 +17,7 @@ import com.simtrade.user_service.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -26,6 +27,8 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +40,24 @@ public class UserService implements UserDetailsService {
     private final SystemStateService systemStateService;
     private final SystemStateRepository systemStateRepository;
     private final MarketClient marketClient;
+
+
+    @Scheduled(cron = "0 0 0 * * MON")
+    @Transactional
+    public void updateWeeklyStartAmount() {
+        List<User> users = userRepository.findAll();
+
+        for (User user : users) {
+            user.setStartWeekAmount(calculatePortfolioValue(mapToAccountDTO(user)));
+        }
+
+        userRepository.saveAll(users);
+        System.out.println("✅ startWeekAmount updated for all users.");
+    }
+
+    
+
+
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
@@ -186,7 +207,7 @@ public class UserService implements UserDetailsService {
 
 
 
-    public BigDecimal calculatePortfolioValue(UserResponseDTO user) {
+    public BigDecimal calculatePortfolioValue(UserAccountDTO user) {
         BigDecimal stockValue = user.getPortfolio().entrySet().stream()
             .map(entry -> marketClient.getPrice(entry.getKey()).getPrice()
                 .multiply(entry.getValue()))
@@ -205,8 +226,8 @@ public class UserService implements UserDetailsService {
         dto.setRole(user.getRole().name());
         dto.setInterestRate(user.getInterestRate());
         dto.setTrustable(user.getTrustable());
-        dto.setEstimatedValue(calculatePortfolioValue(dto));
-
+        dto.setEstimatedValue(calculatePortfolioValue(mapToAccountDTO(user)));
+        dto.setStartWeekAmount(user.getStartWeekAmount());
         return dto;
     }
     
@@ -227,6 +248,7 @@ public class UserService implements UserDetailsService {
         dto.setLastName(user.getLastName());
         dto.setInterestRate(user.getInterestRate());
         dto.setTrustable(user.getTrustable());
+        dto.setStartWeekAmount(user.getStartWeekAmount());
         return dto;
     }
 

@@ -14,4 +14,6 @@ public class UserDetailsDTO {
     private String lastName;
     private Trustable trustable;
     private BigDecimal interestRate;
+    private BigDecimal startWeekAmount;
+
 }

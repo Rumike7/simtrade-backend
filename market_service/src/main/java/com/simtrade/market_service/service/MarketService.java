@@ -10,14 +10,20 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Collections;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.function.Function;
+
+
 
 @Service
 @RequiredArgsConstructor
@@ -82,10 +88,37 @@ public class MarketService {
                 .toList();
     }
 
-    public List<StockPrice> getHistoricalPrices(String symbol) {
-        return stockPriceRepository.findBySymbolAndTimestampAfter(symbol, Instant.now().minusSeconds(30 * 24 * 60 * 60)); // Last 30 days
-    }
+    public List<StockPrice> getHistoricalPrices(String symbol, int totalSeconds) {
+        Instant now = Instant.now();
+        Instant from = now.minusSeconds(totalSeconds);
+        int sampleCount = 100;
+        long step = totalSeconds / sampleCount;
 
+        // Fetch all values in the range
+        List<StockPrice> rawPrices = stockPriceRepository.findBySymbolAndTimestampBetween(symbol, from, now);
+
+        // Index prices by their epoch second (rounded to nearest step)
+        Map<Long, StockPrice> priceMap = rawPrices.stream()
+            .collect(Collectors.toMap(
+                p -> p.getTimestamp().getEpochSecond(),
+                Function.identity(),
+                (a, b) -> a
+            ));
+
+        // Build the result: 100 spaced values
+        List<StockPrice> result = new ArrayList<>();
+        for (int i = 0; i < sampleCount; i++) {
+            Instant targetTime = now.minusSeconds(i * step);
+            long ts = targetTime.getEpochSecond();
+
+            StockPrice price = priceMap.getOrDefault(ts, null);
+            result.add(price);
+        }
+
+        // Reverse so that it's oldest → newest (optional)
+        Collections.reverse(result);
+        return result;
+    }
     public List<StockPrice> getAllHistoricalPrices() {
         return stockPriceRepository.findAllByOrderByTimestampDesc();
     }

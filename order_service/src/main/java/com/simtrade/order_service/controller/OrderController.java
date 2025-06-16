@@ -60,5 +60,18 @@ public class OrderController {
     }
 
 
+    @GetMapping(value = {"/all/history", "/all/history/{status}"})
+    public ResponseEntity<List<Order>> getOrders(
+        @PathVariable(required = false) String status) {
+        return ResponseEntity.ok(orderService.getOrders(status));
+    }
+
+
+    @GetMapping("/all/transactions")
+    public ResponseEntity<List<Transaction>> getTransactions() {
+        return ResponseEntity.ok(orderService.getTransactions());
+    }
+
+
       
 }

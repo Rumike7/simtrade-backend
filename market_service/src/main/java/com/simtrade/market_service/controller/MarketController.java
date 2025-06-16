@@ -22,12 +22,12 @@ public class MarketController {
     }
 
     @GetMapping("/prices/{symbol}")
-    public StockPriceDTO getPrice(@PathVariable String symbol) {
+    public ResponseEntity<StockPriceDTO> getPrice(@PathVariable String symbol) {
         StockPrice price = service.getPrice(symbol);
         if (price == null) {
             throw new IllegalArgumentException("Unknown symbol: " + symbol);
         }
-        return toDTO(price);
+        return ResponseEntity.ok(toDTO(price));
     }
 
     @PostMapping("/updateVolume")
@@ -41,20 +41,30 @@ public class MarketController {
     }
 
     @GetMapping("/prices")
-    public List<StockPriceDTO> getPrices(@RequestParam(required = false) List<String> symbols) {
+    public ResponseEntity<List<StockPriceDTO>> getPrices(@RequestParam(required = false) List<String> symbols) {
         List<StockPrice> prices = (symbols == null || symbols.isEmpty())
                 ? service.getAllPrices()
                 : service.getPricesBySymbols(symbols);
-        return prices.stream().map(this::toDTO).collect(Collectors.toList());
+        return ResponseEntity.ok(prices.stream().map(this::toDTO).collect(Collectors.toList()));
+    }
+    @GetMapping("/historic/{symbol}")
+    public ResponseEntity<List<StockPriceDTO>> getHistoricPrices(
+        @PathVariable String symbol,
+        @RequestParam(name = "time", defaultValue = "604800") int time
+        ) {
+            List<StockPrice> prices = service.getHistoricalPrices(symbol, time);
+        return ResponseEntity.ok(prices.stream().map(this::toDTO).collect(Collectors.toList()));
     }
 
     private StockPriceDTO toDTO(StockPrice stockPrice) {
+        if(stockPrice == null)return null;
         return new StockPriceDTO(
             stockPrice.getId(),
             stockPrice.getSymbol(),
             stockPrice.getPrice(),
             stockPrice.getVolume(),
-            stockPrice.getTimestamp()
+            stockPrice.getTimestamp(),
+            stockPrice.getTotal_supply()
         );
     }
 }
