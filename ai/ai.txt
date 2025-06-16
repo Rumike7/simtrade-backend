@@ -1,0 +1,124 @@
+
+//builder.Dockerfile
+FROM maven:3.9.6-eclipse-temurin-17
+WORKDIR /build
+
+COPY . .
+
+RUN mvn clean package -DskipTests
+//user_service/Dockerfile
+FROM openjdk:17-jdk-slim
+WORKDIR /app
+COPY --from=simtrade-builder /build/user_service/target/user_service-0.0.1-SNAPSHOT.jar user_service.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "user_service.jar"]
+
+
+services:
+  # laravel:
+  #   image: php:8.1-fpm
+  #   volumes:
+  #     - ./laravel:/var/www/portfolio
+  #   depends_on:
+  #     - nginx
+  # nginx:
+  #   image: nginx:latest
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf
+  #     - ./laravel/public:/var/www/laravel/public
+  builder:
+    build:
+      context: .
+      dockerfile: builder.Dockerfile
+    image: simtrade-builder
+    command: mvn clean package -DskipTests
+    volumes:
+      - ./target:/build/target # optional, if you want to export JARs locally
+    # This is only used to build, not run
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user_service/Dockerfile
+    depends_on:
+      - builder
+    ports:
+      - "8081:8080"
+    volumes:
+    - ./user_service/src/main:/app/src/main
+    - ./user_service/target/classes:/app/target/classes
+    environment:
+      SPRING_DEVTOOLS_RESTART_ENABLED: "true"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://timescaledb:5432/simtrade_db
+      SPRING_DATASOURCE_USERNAME: rumike
+      SPRING_DATASOURCE_PASSWORD: do0rdie
+  order-service:
+    build:
+      context: .
+      dockerfile: order_service/Dockerfile
+    depends_on:
+      - builder
+    ports:
+      - "8083:8080"
+    volumes:
+      - ./order_service/src/main:/app/src/main
+      - ./order_service/target/classes:/app/target/classes
+    environment:
+      SPRING_DEVTOOLS_RESTART_ENABLED: "true"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://timescaledb:5432/simtrade_db
+      SPRING_DATASOURCE_USERNAME: rumike
+      SPRING_DATASOURCE_PASSWORD: do0rdie
+
+  market-service:
+    build:
+      context: .
+      dockerfile: market_service/Dockerfile
+    depends_on:
+      - builder
+    ports:
+      - "8082:8080"
+    volumes:
+      - ./market_service/src/main:/app/src/main
+      - ./market_service/target/classes:/app/target/classes
+    environment:
+      SPRING_DEVTOOLS_RESTART_ENABLED: "true"
+      SPRING_DATASOURCE_URL: jdbc:postgresql://timescaledb:5432/simtrade_db
+      SPRING_DATASOURCE_USERNAME: rumike
+      SPRING_DATASOURCE_PASSWORD: do0rdie
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: simtrade_db
+      POSTGRES_USER: rumike
+      POSTGRES_PASSWORD: do0rdie
+
+  # test-runner:
+  #   build: ./common
+  #   depends_on:
+  #     - timescaledb_2
+  #   environment:
+  #     SPRING_DATASOURCE_URL: jdbc:postgresql://timescaledb_2:5432/market_service
+  #     SPRING_DATASOURCE_USERNAME: rumike
+  #     SPRING_DATASOURCE_PASSWORD: 
+  #   command: ./mvnw test
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+FATAL: database "rumike" does not exist

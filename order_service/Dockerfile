@@ -1,5 +1,5 @@
 FROM openjdk:17-jdk-slim
 WORKDIR /app
-COPY target/order-service-0.0.1-SNAPSHOT.jar order-service.jar
-EXPOSE 8083
-ENTRYPOINT ["java", "-jar", "order-service.jar"]
+COPY --from=simtrade-builder /build/order_service/target/order_service-0.0.1-SNAPSHOT.jar order_service.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "order_service.jar"]

@@ -1,9 +1,9 @@
 spring:
   application.name: order-service
   server:
-    port: 8083
+    port: 8080
   datasource:
-    url: jdbc:postgresql://localhost:5433/market_service
+    url: jdbc:postgresql://timescaledb:5432/simtrade_db
     username: rumike
     password: do0rdie
     driver-class-name: org.postgresql.Driver
