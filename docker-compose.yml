@@ -15,7 +15,9 @@ services:
   #     - ./laravel/public:/var/www/laravel/public
 
   timescaledb:
-    image: timescale/timescaledb:latest-pg16
+    build:
+      context: .
+      dockerfile: timescaledb/Dockerfile
     ports:
       - "5432:5432"
     environment:
@@ -23,47 +25,60 @@ services:
       POSTGRES_USER: rumike
       POSTGRES_PASSWORD: do0rdie
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "rumike"]
+      test: ["CMD", "pg_isready", "-U", "rumike", "-d", "simtrade_db"]
       interval: 5s
       timeout: 5s
       retries: 10
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
+    networks:
+      - simtrade-network
 
   builder:
     build:
       context: .
       dockerfile: builder.Dockerfile
     depends_on:
-      - timescaledb
+      timescaledb:
+        condition: service_healthy
     image: simtrade-builder
     command: mvn clean package -DskipTests
     volumes:
-      - ./target:/build/target # optional, if you want to export JARs locally
-    # This is only used to build, not run
+      - ./target:/build/target
+    networks:
+      - simtrade-network
 
   user-service:
     build:
       context: .
       dockerfile: user_service/Dockerfile
     depends_on:
-      - builder
-      - timescaledb
+      timescaledb:
+        condition: service_healthy
+      builder:
+        condition: service_completed_successfully
     ports:
       - "8081:8080"
     volumes:
-    - ./user_service/src/main:/app/src/main
-    - ./user_service/target/classes:/app/target/classes
+      - ./user_service/src/main:/app/src/main
+      - ./user_service/target/classes:/app/target/classes
     environment:
       SPRING_DEVTOOLS_RESTART_ENABLED: "true"
       SPRING_DATASOURCE_URL: jdbc:postgresql://timescaledb:5432/simtrade_db
       SPRING_DATASOURCE_USERNAME: rumike
       SPRING_DATASOURCE_PASSWORD: do0rdie
+    networks:
+      - simtrade-network
+
   order-service:
     build:
       context: .
       dockerfile: order_service/Dockerfile
     depends_on:
-      - builder
-      - timescaledb
+      timescaledb:
+        condition: service_healthy
+      builder:
+        condition: service_completed_successfully
     ports:
       - "8083:8080"
     volumes:
@@ -74,14 +89,18 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://timescaledb:5432/simtrade_db
       SPRING_DATASOURCE_USERNAME: rumike
       SPRING_DATASOURCE_PASSWORD: do0rdie
+    networks:
+      - simtrade-network
 
   market-service:
     build:
       context: .
       dockerfile: market_service/Dockerfile
     depends_on:
-      - builder
-      - timescaledb
+      timescaledb:
+        condition: service_healthy
+      builder:
+        condition: service_completed_successfully
     ports:
       - "8082:8080"
     volumes:
@@ -92,7 +111,15 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://timescaledb:5432/simtrade_db
       SPRING_DATASOURCE_USERNAME: rumike
       SPRING_DATASOURCE_PASSWORD: do0rdie
+    networks:
+      - simtrade-network
 
+networks:
+  simtrade-network:
+    driver: bridge
+
+volumes:
+  timescaledb_data:
 
 
   # test-runner:
