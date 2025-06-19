@@ -1,9 +1,11 @@
-DO $$ 
-BEGIN
-   IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'simtrade_db') THEN
-      PERFORM dblink_exec('dbname=postgres', 'CREATE DATABASE simtrade_db');
-   END IF;
-END $$;
+-- DROP DATABASE IF EXISTS simtrade_db;
+
+-- DO $$ 
+-- BEGIN
+--    IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'simtrade_db') THEN
+--       PERFORM dblink_exec('dbname=postgres', 'CREATE DATABASE simtrade_db');
+--    END IF;
+-- END $$;
 
 -- Connect to the new database
 \connect simtrade_db

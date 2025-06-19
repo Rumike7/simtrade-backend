@@ -43,8 +43,8 @@ services:
         condition: service_healthy
     image: simtrade-builder
     command: mvn clean package -DskipTests
-    volumes:
-      - ./target:/build/target
+    # volumes:
+      # - ./target:/app/target
     networks:
       - simtrade-network
 

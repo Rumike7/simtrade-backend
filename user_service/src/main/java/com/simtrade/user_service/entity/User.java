@@ -55,7 +55,7 @@ public class User  implements AccountHolder{
     private BigDecimal interestRate = BigDecimal.ONE.negate();
 
     @Column(nullable = false)
-    private BigDecimal startWeekAmount;
+    private BigDecimal startWeekAmount = BigDecimal.ZERO;
     
 
     public static enum Role {

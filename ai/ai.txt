@@ -1,132 +1,37 @@
+DROP DATABASE IF EXISTS simtrade_db;
 
-//builder.Dockerfile
-FROM maven:3.9.6-eclipse-temurin-17
-WORKDIR /build
+DO $$ 
+BEGIN
+   IF NOT EXISTS (SELECT FROM pg_database WHERE datname = 'simtrade_db') THEN
+      PERFORM dblink_exec('dbname=postgres', 'CREATE DATABASE simtrade_db');
+   END IF;
+END $$;
 
-COPY . .
+-- Connect to the new database
+\connect simtrade_db
 
-RUN mvn clean package -DskipTests
-//user_service/Dockerfile
-FROM openjdk:17-jdk-slim
-WORKDIR /app
-COPY --from=simtrade-builder /build/user_service/target/user_service-0.0.1-SNAPSHOT.jar user_service.jar
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "user_service.jar"]
+-- Enable TimescaleDB extension
+CREATE EXTENSION IF NOT EXISTS timescaledb;
 
-  //docker-compose.yml
-services:
-  # laravel:
-  #   image: php:8.1-fpm
-  #   volumes:
-  #     - ./laravel:/var/www/portfolio
-  #   depends_on:
-  #     - nginx
-  # nginx:
-  #   image: nginx:latest
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./nginx.conf:/etc/nginx/nginx.conf
-  #     - ./laravel/public:/var/www/laravel/public
+//timescaledb=Dockerfile
 
-  timescaledb:
-    image: timescale/timescaledb:latest-pg16
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_DB: simtrade_db
-      POSTGRES_USER: rumike
-      POSTGRES_PASSWORD: do0rdie
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "rumike"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+FROM timescale/timescaledb:latest-pg16
 
-  builder:
-    build:
-      context: .
-      dockerfile: builder.Dockerfile
-    depends_on:
-      - timescaledb
-    image: simtrade-builder
-    command: mvn clean package -DskipTests
-    volumes:
-      - ./target:/build/target # optional, if you want to export JARs locally
-    # This is only used to build, not run
-
-  user-service:
-    build:
-      context: .
-      dockerfile: user_service/Dockerfile
-    depends_on:
-      - builder
-      - timescaledb
-    ports:
-      - "8081:8080"
-    volumes:
-    - ./user_service/src/main:/app/src/main
-    - ./user_service/target/classes:/app/target/classes
-    environment:
-      SPRING_DEVTOOLS_RESTART_ENABLED: "true"
-      SPRING_DATASOURCE_URL: jdbc:postgresql://timescaledb:5432/simtrade_db
-      SPRING_DATASOURCE_USERNAME: rumike
-      SPRING_DATASOURCE_PASSWORD: do0rdie
-  order-service:
-    build:
-      context: .
-      dockerfile: order_service/Dockerfile
-    depends_on:
-      - builder
-      - timescaledb
-    ports:
-      - "8083:8080"
-    volumes:
-      - ./order_service/src/main:/app/src/main
-      - ./order_service/target/classes:/app/target/classes
-    environment:
-      SPRING_DEVTOOLS_RESTART_ENABLED: "true"
-      SPRING_DATASOURCE_URL: jdbc:postgresql://timescaledb:5432/simtrade_db
-      SPRING_DATASOURCE_USERNAME: rumike
-      SPRING_DATASOURCE_PASSWORD: do0rdie
-
-  market-service:
-    build:
-      context: .
-      dockerfile: market_service/Dockerfile
-    depends_on:
-      - builder
-      - timescaledb
-    ports:
-      - "8082:8080"
-    volumes:
-      - ./market_service/src/main:/app/src/main
-      - ./market_service/target/classes:/app/target/classes
-    environment:
-      SPRING_DEVTOOLS_RESTART_ENABLED: "true"
-      SPRING_DATASOURCE_URL: jdbc:postgresql://timescaledb:5432/simtrade_db
-      SPRING_DATASOURCE_USERNAME: rumike
-      SPRING_DATASOURCE_PASSWORD: do0rdie
+# Copy the initialization script
+COPY ./sql/init-db.sql /docker-entrypoint-initdb.d/init-db.sql
 
 
 
-  # test-runner:
-  #   build: ./common
-  #   depends_on:
-  #     - timescaledb_2
-  #   environment:
-  #     SPRING_DATASOURCE_URL: jdbc:postgresql://timescaledb_2:5432/market_service
-  #     SPRING_DATASOURCE_USERNAME: rumike
-  #     SPRING_DATASOURCE_PASSWORD: 
-  #   command: ./mvnw test
-
+-- Example: Convert 'users' to a hypertable (if using TimescaleDB features)
+-- SELECT create_hypertable('users', 'created_at', if_not_exists => TRUE);
 
 //application.yml
-server:
-  port: 8080
 
 spring:
+  application:
+    name: common
+  server:
+    port: 8080
   datasource:
     url: jdbc:postgresql://timescaledb:5432/simtrade_db
     username: rumike
@@ -139,29 +44,30 @@ spring:
     properties:
       hibernate:
         default_schema: public
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
 
-        
+  cloud:
+    gateway:
+      routes:
+        - id: public-api
+          uri: http://public-service:8080
+          predicates:
+            - Path=/api/**
+          filters:
+            - name: ApiKeyGatewayFilter
+
+
 jwt:
   secret: fqU9JzNw9mRv0jRg5UZdg08SOunqfS406ReqAsIKpPCwk0UVyU0TNHlCIVrBfj8tUlwi2paaTXq8I2FdN1a6HA==
   expiration: 864000000
 
-redis: 
-  host: localhost 
-  port: 6379
-
-kafka: 
-  bootstrap-servers: localhost:9092 
-  consumer: 
-    group-id: leaderboard-group 
-    auto-offset-reset: latest
-
 logging:
   level:
-    com.simtrade.user_service: DEBUG
+    com.simtrade.market_service: DEBUG
     org.springframework.security: DEBUG
     org.springframework.web: INFO
-    org.springframework.kafka: DEBUG
-    org.apache.kafka: DEBUG
 
 market:
   service:
@@ -175,7 +81,100 @@ order:
   service:
     url: http://localhost:8083
 
+api:
+ key: Simtrade
 
-timescaledb-1     | 2025-06-17 07:12:17.477 UTC [46] FATAL:  database "rumike" does not exist
-timescaledb-1     | 2025-06-17 07:12:22.722 UTC [54] FATAL:  database "rumike" does not exist
-market-service-1  |
+//User.java
+
+package com.simtrade.user_service.entity;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.simtrade.common.enums.Trustable;
+
+@Entity
+@Table(name = "users")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class User  implements AccountHolder{
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(unique = true, nullable = false)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;
+
+    private String firstName;
+    private String lastName;
+
+    @Column(nullable = false)
+    private BigDecimal balance = BigDecimal.ZERO;
+
+    @Column(nullable = false)
+    private BigDecimal totalDeposits = BigDecimal.ZERO;
+
+
+    @ElementCollection
+    @MapKeyColumn(name = "symbol")
+    @Column(name = "quantity")
+    @CollectionTable(name = "user_portfolio", joinColumns = @JoinColumn(name = "user_id"))
+    private Map<String, BigDecimal> portfolio = new HashMap<>();
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.GUEST;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Trustable trustable = Trustable.C;
+
+    @Column(nullable = false)
+    private BigDecimal interestRate = BigDecimal.ONE.negate();
+
+    @Column(nullable = false)
+    private BigDecimal startWeekAmount = BigDecimal.ZERO;
+    
+
+    public static enum Role {
+        USER, ADMIN, MODERATOR, ANALYST, GUEST, PREMIUM_USER, TESTER
+    }
+}C:\Users\fati\Documents\GitHub\simtrade-backend>docker ps -a
+
+CONTAINER ID   IMAGE                             COMMAND                  CREATED                  STATUS                        PORTS     NAMES
+
+6e833f991375   simtrade-backend-user-service     "java -jar user_serv…"   Less than a second ago   Exited (143) 29 seconds ago             simtrade-backend-user-service-1
+
+eb0c1d077046   simtrade-backend-market-service   "java -jar market_se…"   Less than a second ago   Exited (143) 29 seconds ago             simtrade-backend-market-service-1
+
+a75b69ef47fb   simtrade-backend-order-service    "java -jar order_ser…"   Less than a second ago   Exited (143) 29 seconds ago             simtrade-backend-order-service-1
+
+75ce876b1f00   simtrade-builder                  "/usr/local/bin/mvn-…"   Less than a second ago   Exited (0) 2 minutes ago                simtrade-backend-builder-1
+
+11103c28b252   simtrade-backend-timescaledb      "docker-entrypoint.s…"   Less than a second ago   Exited (0) 28 seconds ago               simtrade-backend-timescaledb-1
+
+C:\Users\fati\Documents\GitHub\simtrade-backend>docker start 11103c28b252
+
+11103c28b252
+
+C:\Users\fati\Documents\GitHub\simtrade-backend>docker exec -it simtrade-backend-timescaledb-1 psql -U rumike -d postgres
+
+psql (16.9)
+
+Type "help" for help.
+
+postgres=# \dt
+
+Did not find any relations.
+
+postgres=#
